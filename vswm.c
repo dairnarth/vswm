@@ -30,12 +30,14 @@ static void focus(XEvent *event, char *command);
 static void launch(XEvent *event, char *command);
 static void destroy(XEvent *event, char *command);
 static void refresh(XEvent *event, char *command);
+static void quit(XEvent *event, char *command);
 
 static int ignore(Display *display, XErrorEvent *event);
 
 static Display *display;
 static Window root;
 static int screen, width, height;
+static int running = 1;
 
 static Key keys[] = {
 	{ Mod4Mask,             XK_Return,                  launch,     "xterm"             },
@@ -44,7 +46,7 @@ static Key keys[] = {
 	{ Mod4Mask,             XK_p,                       launch,     "scr"               },
 	{ Mod4Mask,             XK_q,                       destroy,    0                   },
 	{ Mod4Mask | ShiftMask, XK_r,                       refresh,    0                   },
-	{ Mod4Mask | ShiftMask, XK_q,                       destroy,    0                   },
+	{ Mod4Mask | ShiftMask, XK_q,                       quit,       0                   },
 	{ Mod4Mask,             XK_Tab,                     focus,      "next"              },
 	{ Mod4Mask | ShiftMask, XK_Tab,                     focus,      "prev"              },
 	{ 0,                    XF86XK_AudioMute,           launch,     "pamixer -t"        },
@@ -101,7 +103,7 @@ void loop(void)
 {
 	XEvent event;
 
-	while (1 && !XNextEvent(display, &event))
+	while (running && !XNextEvent(display, &event))
 		if (events[event.type])
 			events[event.type](&event);
 }
@@ -194,6 +196,14 @@ void refresh(XEvent *event, char *command)
 
 	size();
 	scan();
+}
+
+void quit(XEvent *event, char *command)
+{
+	(void)event;
+	(void)command;
+
+    running = 0;
 }
 
 int ignore(Display *display, XErrorEvent *event)
