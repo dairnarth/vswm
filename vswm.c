@@ -6,8 +6,12 @@
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 
-#define BORDER_WIDTH 1
-#define BORDER_COLOUR 0xebdbb2
+#define BORDER_WIDTH    1
+#define BORDER_COLOUR   0xebdbb2
+#define GAP_TOP         200
+#define GAP_RIGHT       200
+#define GAP_BOTTOM      200
+#define GAP_LEFT        200
 
 typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
@@ -68,15 +72,10 @@ static const Events events[LASTEvent] = {
 
 void size(void)
 {
-	XWindowAttributes attributes;
-
-	if (XGetWindowAttributes(display, root, &attributes)) {
-		width = attributes.width;
-		height = attributes.height;
-	} else {
-		width = XDisplayWidth(display, screen);
-		height = XDisplayHeight(display, screen);
-	}
+	width = XDisplayWidth(display, screen) - \
+            (GAP_RIGHT + GAP_LEFT + (BORDER_WIDTH * 2));
+	height = XDisplayHeight(display, screen) - \
+            (GAP_TOP + GAP_BOTTOM + (BORDER_WIDTH * 2));
 }
 
 void grab(void)
@@ -153,7 +152,7 @@ void map(XEvent *event)
 	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
 	XConfigureWindow(display, window, CWBorderWidth, &changes);
-	XMoveResizeWindow(display, window, 0, 0, width, height);
+	XMoveResizeWindow(display, window, GAP_TOP, GAP_LEFT, width, height);
 	XMapWindow(display, window);
 }
 
