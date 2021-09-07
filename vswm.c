@@ -40,20 +40,21 @@ static int screen, width, height;
 static int running = 1;
 
 static Key keys[] = {
-	{ Mod4Mask,             XK_Return,                  launch,     "xterm"             },
-	{ Mod4Mask,             XK_d,                       launch,     "dmn"               },
-	{ Mod4Mask,             XK_b,                       launch,     "chromium"          },
-	{ Mod4Mask,             XK_p,                       launch,     "scr"               },
-	{ Mod4Mask,             XK_q,                       destroy,    0                   },
-	{ Mod4Mask | ShiftMask, XK_r,                       refresh,    0                   },
-	{ Mod4Mask | ShiftMask, XK_q,                       quit,       0                   },
-	{ Mod4Mask,             XK_Tab,                     focus,      "next"              },
-	{ Mod4Mask | ShiftMask, XK_Tab,                     focus,      "prev"              },
-	{ 0,                    XF86XK_AudioMute,           launch,     "pamixer -t"        },
-	{ 0,                    XF86XK_AudioLowerVolume,    launch,     "pamixer -d 5"      },
-	{ 0,                    XF86XK_AudioRaiseVolume,    launch,     "pamixer -i 5"      },
-	{ 0,                    XF86XK_MonBrightnessDown,   launch,     "xbacklight -dec 5" },
-	{ 0,                    XF86XK_MonBrightnessUp,     launch,     "xbacklight -inc 5" },
+    /*  Modifiers,            Key,                        Function,         Arguments           */
+	{   Mod4Mask,             XK_Return,                  launch,           "xterm"             },
+	{   Mod4Mask,             XK_d,                       launch,           "dmn"               },
+	{   Mod4Mask,             XK_b,                       launch,           "chromium"          },
+	{   Mod4Mask,             XK_p,                       launch,           "scr"               },
+	{   Mod4Mask,             XK_q,                       destroy,          0                   },
+	{   Mod4Mask | ShiftMask, XK_r,                       refresh,          0                   },
+	{   Mod4Mask | ShiftMask, XK_q,                       quit,             0                   },
+	{   Mod4Mask,             XK_Tab,                     focus,            "next"              },
+	{   Mod4Mask | ShiftMask, XK_Tab,                     focus,            "prev"              },
+	{   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"        },
+	{   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"      },
+	{   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"      },
+	{   0,                    XF86XK_MonBrightnessDown,   launch,           "xbacklight -dec 5" },
+	{   0,                    XF86XK_MonBrightnessUp,     launch,           "xbacklight -inc 5" },
 };
 
 static const Events events[LASTEvent] = {
