@@ -8,7 +8,7 @@
 
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
-#define GAP_TOP         5
+#define GAP_TOP         28
 #define GAP_RIGHT       5
 #define GAP_BOTTOM      5
 #define GAP_LEFT        5
@@ -152,7 +152,7 @@ void map(XEvent *event)
 	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
 	XConfigureWindow(display, window, CWBorderWidth, &changes);
-	XMoveResizeWindow(display, window, GAP_TOP, GAP_LEFT, width, height);
+	XMoveResizeWindow(display, window, GAP_LEFT, GAP_TOP, width, height);
 	XMapWindow(display, window);
 }
 
