@@ -6,6 +6,9 @@
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 
+#define BORDER_WIDTH 1
+#define BORDER_COLOUR 0xebdbb2
+
 typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
 
@@ -145,9 +148,10 @@ void key(XEvent *event)
 void map(XEvent *event)
 {
 	Window window = event->xmaprequest.window;
-	XWindowChanges changes = { .border_width = 0 };
+	XWindowChanges changes = { .border_width = BORDER_WIDTH };
 
 	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
+    XSetWindowBorder(display, window, BORDER_COLOUR);
 	XConfigureWindow(display, window, CWBorderWidth, &changes);
 	XMoveResizeWindow(display, window, 0, 0, width, height);
 	XMapWindow(display, window);
