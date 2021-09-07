@@ -8,10 +8,10 @@
 
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
-#define GAP_TOP         200
-#define GAP_RIGHT       200
-#define GAP_BOTTOM      200
-#define GAP_LEFT        200
+#define GAP_TOP         5
+#define GAP_RIGHT       5
+#define GAP_BOTTOM      5
+#define GAP_LEFT        5
 
 typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
