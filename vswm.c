@@ -98,14 +98,14 @@ void grab(void)
 			keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
 }
 
-void scan()
+void scan(void)
 {
 	unsigned int i, n;
 	Window r, p, *c;
 
 	if (XQueryTree(display, root, &r, &p, &c, &n)) {
 		for (i = 0; i < n; i++)
-			XMoveResizeWindow(display, c[i], 0, 0, width, height);
+			XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
 
 		if (c)
 			XFree(c);
@@ -217,8 +217,10 @@ void quit(XEvent *event, char *command)
 
 void fullscreen(XEvent *event, char *command)
 {
-    (void)event;
     (void)command;
+
+    XMapRequestEvent *request = &event->xmaprequest;
+    int revert;
 
     if (isfullscreen == 0) {
         border_width = 0;
@@ -235,6 +237,10 @@ void fullscreen(XEvent *event, char *command)
         gap_left     = GAP_LEFT;
         isfullscreen = 0;
     }
+
+    XGetInputFocus(display, &request->window, &revert);
+    refresh(NULL, NULL);
+    map(event);
 }
 
 int ignore(Display *display, XErrorEvent *event)
