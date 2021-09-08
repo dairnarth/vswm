@@ -6,6 +6,7 @@
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 
+/* Defaults */
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
 #define GAP_TOP         28
@@ -23,6 +24,7 @@ struct Key {
 	char *command;
 };
 
+/* Function Declarations */
 static void size(void);
 static void grab(void);
 static void scan(void);
@@ -38,13 +40,22 @@ static void launch(XEvent *event, char *command);
 static void destroy(XEvent *event, char *command);
 static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
+static void fullscreen(XEvent *event, char *command);
+static void remap(XEvent *event);
 
 static int ignore(Display *display, XErrorEvent *event);
 
-static Display *display;
-static Window root;
+/* Variables */
 static int screen, width, height;
 static int running = 1;
+static int isfullscreen = 0;
+static int border_width = BORDER_WIDTH;
+static int gap_top    = GAP_TOP;
+static int gap_right  = GAP_RIGHT;
+static int gap_bottom = GAP_BOTTOM;
+static int gap_left   = GAP_LEFT;
+static Display *display;
+static Window root;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
@@ -56,6 +67,7 @@ static Key keys[] = {
 	{   Mod4Mask | ShiftMask, XK_q,                       quit,             0                           },
 	{   Mod4Mask,             XK_Tab,                     focus,            "next"                      },
 	{   Mod4Mask | ShiftMask, XK_Tab,                     focus,            "prev"                      },
+	{   Mod4Mask,             XK_Return,                  fullscreen,       0                           },
 	{   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                },
 	{   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"              },
 	{   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"              },
@@ -73,9 +85,9 @@ static const Events events[LASTEvent] = {
 void size(void)
 {
 	width = XDisplayWidth(display, screen) - \
-            (GAP_RIGHT + GAP_LEFT + (BORDER_WIDTH * 2));
+            (gap_right + gap_left + (border_width * 2));
 	height = XDisplayHeight(display, screen) - \
-            (GAP_TOP + GAP_BOTTOM + (BORDER_WIDTH * 2));
+            (gap_top + gap_bottom + (border_width * 2));
 }
 
 void grab(void)
@@ -87,14 +99,14 @@ void grab(void)
 			keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
 }
 
-void scan()
+void scan(void)
 {
 	unsigned int i, n;
 	Window r, p, *c;
 
 	if (XQueryTree(display, root, &r, &p, &c, &n)) {
 		for (i = 0; i < n; i++)
-			XMoveResizeWindow(display, c[i], 0, 0, width, height);
+			XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
 
 		if (c)
 			XFree(c);
@@ -147,12 +159,12 @@ void key(XEvent *event)
 void map(XEvent *event)
 {
 	Window window = event->xmaprequest.window;
-	XWindowChanges changes = { .border_width = BORDER_WIDTH };
+	XWindowChanges changes = { .border_width = border_width };
 
 	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
 	XConfigureWindow(display, window, CWBorderWidth, &changes);
-	XMoveResizeWindow(display, window, GAP_LEFT, GAP_TOP, width, height);
+	XMoveResizeWindow(display, window, gap_left, gap_top, width, height);
 	XMapWindow(display, window);
 }
 
@@ -162,6 +174,7 @@ void focus(XEvent *event, char *command)
 	int next = command[0] == 'n';
 
 	XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+    remap(event);
 }
 
 void launch(XEvent *event, char *command)
@@ -202,6 +215,38 @@ void quit(XEvent *event, char *command)
 	(void)command;
 
     running = 0;
+}
+
+void fullscreen(XEvent *event, char *command)
+{
+    (void)command;
+
+    if (isfullscreen == 0) {
+        border_width = 0;
+        gap_top      = 0;
+        gap_right    = 0;
+        gap_bottom   = 0;
+        gap_left     = 0;
+        isfullscreen = 1;
+    } else if (isfullscreen == 1) {
+        border_width = BORDER_WIDTH;
+        gap_top      = GAP_TOP;
+        gap_right    = GAP_RIGHT;
+        gap_bottom   = GAP_BOTTOM;
+        gap_left     = GAP_LEFT;
+        isfullscreen = 0;
+    }
+    remap(event);
+}
+
+void remap(XEvent *event)
+{
+    XMapRequestEvent *request = &event->xmaprequest;
+    int revert;
+
+    XGetInputFocus(display, &request->window, &revert);
+    refresh(NULL, NULL);
+    map(event);
 }
 
 int ignore(Display *display, XErrorEvent *event)
