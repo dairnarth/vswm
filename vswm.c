@@ -1,6 +1,5 @@
 #include <signal.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
@@ -159,7 +158,7 @@ void key(XEvent *event)
 void map(XEvent *event)
 {
 	Window window = event->xmaprequest.window;
-	XWindowChanges changes = { .border_width = BORDER_WIDTH };
+	XWindowChanges changes = { .border_width = border_width };
 
 	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
