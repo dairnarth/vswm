@@ -59,8 +59,8 @@ static Key keys[] = {
 	{   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                },
 	{   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"              },
 	{   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"              },
-	{   0,                    XF86XK_MonBrightnessDown,   launch,           "xbacklight -dec 5"         },
-	{   0,                    XF86XK_MonBrightnessUp,     launch,           "xbacklight -inc 5"         },
+	{   0,                    XF86XK_MonBrightnessDown,   launch,           "light -U 5"                },
+	{   0,                    XF86XK_MonBrightnessUp,     launch,           "light -A 5"                },
 };
 
 static const Events events[LASTEvent] = {
