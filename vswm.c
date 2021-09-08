@@ -41,6 +41,7 @@ static void destroy(XEvent *event, char *command);
 static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
+static void remap(XEvent *event);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -173,6 +174,7 @@ void focus(XEvent *event, char *command)
 	int next = command[0] == 'n';
 
 	XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+    remap(event);
 }
 
 void launch(XEvent *event, char *command)
@@ -219,9 +221,6 @@ void fullscreen(XEvent *event, char *command)
 {
     (void)command;
 
-    XMapRequestEvent *request = &event->xmaprequest;
-    int revert;
-
     if (isfullscreen == 0) {
         border_width = 0;
         gap_top      = 0;
@@ -237,6 +236,13 @@ void fullscreen(XEvent *event, char *command)
         gap_left     = GAP_LEFT;
         isfullscreen = 0;
     }
+    remap(event);
+}
+
+void remap(XEvent *event)
+{
+    XMapRequestEvent *request = &event->xmaprequest;
+    int revert;
 
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
