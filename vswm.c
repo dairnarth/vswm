@@ -18,10 +18,10 @@ typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
 
 struct Key {
-	unsigned int modifier;
-	KeySym keysym;
-	void (*function)(XEvent *event, char *command);
-	char *command;
+    unsigned int modifier;
+    KeySym keysym;
+    void (*function)(XEvent *event, char *command);
+    char *command;
 };
 
 /* Function Declarations */
@@ -42,6 +42,7 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
+static void drawbar(XEvent *event);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -59,127 +60,127 @@ static Window root;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
-	{   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"        },
-	{   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser"  }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
-	{   Mod4Mask,             XK_space,                   launch,           "dmenu_run"                 },
-	{   Mod4Mask,             XK_q,                       destroy,          0                           },
-	{   Mod4Mask | ShiftMask, XK_r,                       refresh,          0                           },
-	{   Mod4Mask | ShiftMask, XK_q,                       quit,             0                           },
-	{   Mod4Mask,             XK_Tab,                     focus,            "next"                      },
-	{   Mod4Mask | ShiftMask, XK_Tab,                     focus,            "prev"                      },
-	{   Mod4Mask,             XK_Return,                  fullscreen,       0                           },
-	{   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                },
-	{   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"              },
-	{   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"              },
-	{   0,                    XF86XK_MonBrightnessDown,   launch,           "light -U 5"                },
-	{   0,                    XF86XK_MonBrightnessUp,     launch,           "light -A 5"                },
+    {   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"        },
+    {   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser"  }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
+    {   Mod4Mask,             XK_space,                   launch,           "dmenu_run"                 },
+    {   Mod4Mask,             XK_q,                       destroy,          0                           },
+    {   Mod4Mask | ShiftMask, XK_r,                       refresh,          0                           },
+    {   Mod4Mask | ShiftMask, XK_q,                       quit,             0                           },
+    {   Mod4Mask,             XK_Tab,                     focus,            "next"                      },
+    {   Mod4Mask | ShiftMask, XK_Tab,                     focus,            "prev"                      },
+    {   Mod4Mask,             XK_Return,                  fullscreen,       0                           },
+    {   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                },
+    {   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"              },
+    {   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"              },
+    {   0,                    XF86XK_MonBrightnessDown,   launch,           "light -U 5"                },
+    {   0,                    XF86XK_MonBrightnessUp,     launch,           "light -A 5"                },
 };
 
 static const Events events[LASTEvent] = {
-	[ConfigureRequest] = configure,
-	[EnterNotify] = enter,
-	[KeyPress] = key,
-	[MapRequest] = map,
+    [ConfigureRequest] = configure,
+    [EnterNotify] = enter,
+    [KeyPress] = key,
+    [MapRequest] = map,
 };
 
 void size(void)
 {
-	width = XDisplayWidth(display, screen) - \
+    width = XDisplayWidth(display, screen) - \
             (gap_right + gap_left + (border_width * 2));
-	height = XDisplayHeight(display, screen) - \
+    height = XDisplayHeight(display, screen) - \
             (gap_top + gap_bottom + (border_width * 2));
 }
 
 void grab(void)
 {
-	unsigned int i;
+    unsigned int i;
 
-	for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
-		XGrabKey(display, XKeysymToKeycode(display, keys[i].keysym),
-			keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
+    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
+        XGrabKey(display, XKeysymToKeycode(display, keys[i].keysym),
+            keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
 }
 
 void scan(void)
 {
-	unsigned int i, n;
-	Window r, p, *c;
+    unsigned int i, n;
+    Window r, p, *c;
 
-	if (XQueryTree(display, root, &r, &p, &c, &n)) {
-		for (i = 0; i < n; i++)
-			XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
+    if (XQueryTree(display, root, &r, &p, &c, &n)) {
+        for (i = 0; i < n; i++)
+            XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
 
-		if (c)
-			XFree(c);
-	}
+        if (c)
+            XFree(c);
+    }
 }
 
 void loop(void)
 {
-	XEvent event;
+    XEvent event;
 
-	while (running && !XNextEvent(display, &event))
-		if (events[event.type])
-			events[event.type](&event);
+    while (running && !XNextEvent(display, &event))
+        if (events[event.type])
+            events[event.type](&event);
 }
 
 void enter(XEvent *event)
 {
-	Window window = event->xcrossing.window;
+    Window window = event->xcrossing.window;
 
-	XSetInputFocus(display, window, RevertToParent, CurrentTime);
-	XRaiseWindow(display, window);
+    XSetInputFocus(display, window, RevertToParent, CurrentTime);
+    XRaiseWindow(display, window);
 }
 
 void configure(XEvent *event)
 {
-	XConfigureRequestEvent *request = &event->xconfigurerequest;
-	XWindowChanges changes = {
-		.x = request->x,
-		.y = request->y,
-		.width = request->width,
-		.height = request->height,
-		.border_width = request->border_width,
-		.sibling = request->above,
-		.stack_mode = request->detail,
-	};
+    XConfigureRequestEvent *request = &event->xconfigurerequest;
+    XWindowChanges changes = {
+        .x = request->x,
+        .y = request->y,
+        .width = request->width,
+        .height = request->height,
+        .border_width = request->border_width,
+        .sibling = request->above,
+        .stack_mode = request->detail,
+    };
 
-	XConfigureWindow(display, request->window, request->value_mask, &changes);
+    XConfigureWindow(display, request->window, request->value_mask, &changes);
 }
 
 void key(XEvent *event)
 {
-	unsigned int i;
-	KeySym keysym = XkbKeycodeToKeysym(display, event->xkey.keycode, 0, 0);
+    unsigned int i;
+    KeySym keysym = XkbKeycodeToKeysym(display, event->xkey.keycode, 0, 0);
 
-	for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
-		if (keysym == keys[i].keysym && keys[i].modifier == event->xkey.state)
-			keys[i].function(event, keys[i].command);
+    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
+        if (keysym == keys[i].keysym && keys[i].modifier == event->xkey.state)
+            keys[i].function(event, keys[i].command);
 }
 
 void map(XEvent *event)
 {
-	Window window = event->xmaprequest.window;
-	XWindowChanges changes = { .border_width = border_width };
+    Window window = event->xmaprequest.window;
+    XWindowChanges changes = { .border_width = border_width };
 
-	XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
+    XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
-	XConfigureWindow(display, window, CWBorderWidth, &changes);
-	XMoveResizeWindow(display, window, gap_left, gap_top, width, height);
-	XMapWindow(display, window);
+    XConfigureWindow(display, window, CWBorderWidth, &changes);
+    XMoveResizeWindow(display, window, gap_left, gap_top, width, height);
+    XMapWindow(display, window);
 }
 
 void focus(XEvent *event, char *command)
 {
-	(void)event;
-	int next = command[0] == 'n';
+    (void)event;
+    int next = command[0] == 'n';
 
-	XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+    XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
     remap(event);
 }
 
 void launch(XEvent *event, char *command)
 {
-	(void)event;
+    (void)event;
 
     if (fork() == 0) {
         if (display)
@@ -194,25 +195,25 @@ void launch(XEvent *event, char *command)
 
 void destroy(XEvent *event, char *command)
 {
-	(void)command;
+    (void)command;
 
-	XSetCloseDownMode(display, DestroyAll);
-	XKillClient(display, event->xkey.subwindow);
+    XSetCloseDownMode(display, DestroyAll);
+    XKillClient(display, event->xkey.subwindow);
 }
 
 void refresh(XEvent *event, char *command)
 {
-	(void)event;
-	(void)command;
+    (void)event;
+    (void)command;
 
-	size();
-	scan();
+    size();
+    scan();
 }
 
 void quit(XEvent *event, char *command)
 {
-	(void)event;
-	(void)command;
+    (void)event;
+    (void)command;
 
     running = 0;
 }
@@ -251,28 +252,28 @@ void remap(XEvent *event)
 
 int ignore(Display *display, XErrorEvent *event)
 {
-	(void)display;
-	(void)event;
+    (void)display;
+    (void)event;
 
-	return 0;
+    return 0;
 }
 
 int main(void)
 {
-	if (!(display = XOpenDisplay(0)))
-		exit(1);
+    if (!(display = XOpenDisplay(0)))
+        exit(1);
 
-	signal(SIGCHLD, SIG_IGN);
-	XSetErrorHandler(ignore);
+    signal(SIGCHLD, SIG_IGN);
+    XSetErrorHandler(ignore);
 
-	screen = XDefaultScreen(display);
-	root = XDefaultRootWindow(display);
+    screen = XDefaultScreen(display);
+    root = XDefaultRootWindow(display);
 
-	XSelectInput(display, root, SubstructureRedirectMask);
-	XDefineCursor(display, root, XCreateFontCursor(display, 68));
+    XSelectInput(display, root, SubstructureRedirectMask);
+    XDefineCursor(display, root, XCreateFontCursor(display, 68));
 
-	size();
-	grab();
-	scan();
-	loop();
+    size();
+    grab();
+    scan();
+    loop();
 }
