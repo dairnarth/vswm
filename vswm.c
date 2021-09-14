@@ -248,6 +248,12 @@ void remap(XEvent *event)
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
     map(event);
+    drawbar(event);
+}
+
+void drawbar(XEvent *event)
+{
+    launch(event, "launchlemon");
 }
 
 int ignore(Display *display, XErrorEvent *event)
