@@ -42,7 +42,6 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
-static void drawbar(XEvent *event);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -248,12 +247,6 @@ void remap(XEvent *event)
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
     map(event);
-    drawbar(event);
-}
-
-void drawbar(XEvent *event)
-{
-    launch(event, "launchlemon");
 }
 
 int ignore(Display *display, XErrorEvent *event)
