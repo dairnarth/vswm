@@ -51,6 +51,7 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
+static void addclient(XConfigureRequestEvent *request);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -143,7 +144,6 @@ void enter(XEvent *event)
 void configure(XEvent *event)
 {
     XConfigureRequestEvent *request = &event->xconfigurerequest;
-    Client *client;
     XWindowChanges changes = {
         .x = request->x,
         .y = request->y,
@@ -153,10 +153,8 @@ void configure(XEvent *event)
         .sibling = request->above,
         .stack_mode = request->detail,
     };
-    client->display = request->display;
-    client->window  = request->window;
-    client->parent  = request->parent;
 
+    addclient(request);
     XConfigureWindow(display, request->window, request->value_mask, &changes);
 }
 
@@ -261,6 +259,20 @@ void remap(XEvent *event)
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
     map(event);
+}
+
+void addclient(XConfigureRequestEvent *request)
+{
+    /* TODO: get name of window and
+     *       find way to make rules
+     *       for ignore.
+     */
+
+    Client *client;
+
+    client->display = request->display;
+    client->window  = request->window;
+    client->parent  = request->parent;
 }
 
 int ignore(Display *display, XErrorEvent *event)
