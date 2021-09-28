@@ -14,9 +14,18 @@
 #define GAP_BOTTOM      5
 #define GAP_LEFT        5
 
-typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
 
+typedef struct Client Client;
+struct Client {
+    char name[256];
+    Display *display;
+    Window parent;
+    Window window;
+    int ignored;
+};
+
+typedef struct Key Key;
 struct Key {
     unsigned int modifier;
     KeySym keysym;
