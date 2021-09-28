@@ -143,6 +143,7 @@ void enter(XEvent *event)
 void configure(XEvent *event)
 {
     XConfigureRequestEvent *request = &event->xconfigurerequest;
+    Client *client;
     XWindowChanges changes = {
         .x = request->x,
         .y = request->y,
@@ -152,6 +153,9 @@ void configure(XEvent *event)
         .sibling = request->above,
         .stack_mode = request->detail,
     };
+    client->display = request->display;
+    client->window  = request->window;
+    client->parent  = request->parent;
 
     XConfigureWindow(display, request->window, request->value_mask, &changes);
 }
