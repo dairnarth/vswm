@@ -5,6 +5,7 @@
 #include <X11/XF86keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 /* Defaults */
 #define BORDER_WIDTH    1
@@ -18,11 +19,13 @@ typedef void (*Events)(XEvent *event);
 
 typedef struct Client Client;
 struct Client {
-    char name[256];
+    char *name;
+    char *class;
     Display *display;
     Window parent;
     Window window;
     int ignored;
+    int focused;
 };
 
 typedef struct Key Key;
@@ -263,16 +266,24 @@ void remap(XEvent *event)
 
 void addclient(XConfigureRequestEvent *request)
 {
-    /* TODO: get name of window and
+    /* TODO: get name of window (done) and
      *       find way to make rules
      *       for ignore.
      */
 
     Client *client;
+    XClassHint classhint = { NULL, NULL };
 
+    XGetClassHint(display, request->window, &classhint);
+
+    client->name    = classhint.res_name;
+    client->class   = classhint.res_class;
     client->display = request->display;
     client->window  = request->window;
     client->parent  = request->parent;
+
+    XFree(classhint.res_name);
+    XFree(classhint.res_class);
 }
 
 int ignore(Display *display, XErrorEvent *event)
