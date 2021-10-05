@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
@@ -19,8 +20,8 @@ typedef void (*Events)(XEvent *event);
 
 typedef struct Client Client;
 struct Client {
-    char *name;
-    char *class;
+    char name[256];
+    char class[256];
     Display *display;
     Window parent;
     Window window;
@@ -271,13 +272,13 @@ void addclient(XConfigureRequestEvent *request)
      *       for ignore.
      */
 
-    Client *client;
+    Client *client = { NULL };
     XClassHint classhint = { NULL, NULL };
 
     XGetClassHint(display, request->window, &classhint);
 
-    client->name    = classhint.res_name;
-    client->class   = classhint.res_class;
+    strcpy(classhint.res_name, client->name);
+    strcpy(classhint.res_class, client->class);
     client->display = request->display;
     client->window  = request->window;
     client->parent  = request->parent;
