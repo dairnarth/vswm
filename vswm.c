@@ -1,10 +1,12 @@
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 /* Defaults */
 #define BORDER_WIDTH    1
@@ -42,6 +44,7 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
+static int barcheck(Window window);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -165,7 +168,9 @@ void map(XEvent *event)
     XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
     XConfigureWindow(display, window, CWBorderWidth, &changes);
-    XMoveResizeWindow(display, window, gap_left, gap_top, width, height);
+    barcheck(window) ?
+        XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
+        XMoveResizeWindow(display, window, 5, 5, 1268, 18);
     XMapWindow(display, window);
 }
 
@@ -174,8 +179,11 @@ void focus(XEvent *event, char *command)
     (void)event;
     int next = command[0] == 'n';
 
-    XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-    remap(event);
+    if (!isfullscreen) {
+        XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+    } else {
+        return;
+    }
 }
 
 void launch(XEvent *event, char *command)
@@ -248,6 +256,21 @@ void remap(XEvent *event)
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
     map(event);
+}
+
+int barcheck(Window window)
+{
+    char *class;
+    XClassHint classhint = { NULL, NULL };
+
+    XGetClassHint(display, window, &classhint);
+    class = classhint.res_class;
+
+    if (strcmp(class, "lemonbar") == 0) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 int ignore(Display *display, XErrorEvent *event)
