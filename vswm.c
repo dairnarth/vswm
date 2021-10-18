@@ -9,6 +9,7 @@
 #include <X11/Xutil.h>
 
 /* Defaults */
+#define BARCLASS        "Bar"
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
 #define GAP_TOP         28
@@ -44,7 +45,7 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
-static int barcheck(Window window);
+static int  barcheck(Window window);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -111,7 +112,6 @@ void scan(void)
     if (XQueryTree(display, root, &r, &p, &c, &n)) {
         for (i = 0; i < n; i++)
             XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
-
         if (c)
             XFree(c);
     }
@@ -168,7 +168,7 @@ void map(XEvent *event)
     XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
     XConfigureWindow(display, window, CWBorderWidth, &changes);
-    barcheck(window) ?
+    (barcheck(window)) ?
         XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
         XMoveResizeWindow(display, window, 5, 5, 1268, 18);
     XMapWindow(display, window);
@@ -176,13 +176,11 @@ void map(XEvent *event)
 
 void focus(XEvent *event, char *command)
 {
-    (void)event;
     int next = command[0] == 'n';
 
-    if (!isfullscreen) {
+    if (isfullscreen == 0) {
         XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-    } else {
-        return;
+        remap(event);
     }
 }
 
@@ -266,11 +264,16 @@ int barcheck(Window window)
     XGetClassHint(display, window, &classhint);
     class = classhint.res_class;
 
-    if (strcmp(class, "lemonbar") == 0) {
+    if (strcmp(class, BARCLASS) == 0) {
         return 0;
     } else {
         return 1;
     }
+
+    if (classhint.res_class)
+        XFree(classhint.res_class);
+    if (classhint.res_name)
+        XFree(classhint.res_name);
 }
 
 int ignore(Display *display, XErrorEvent *event)
