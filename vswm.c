@@ -182,12 +182,10 @@ void map(XEvent *event)
 
 void focus(XEvent *event, char *command)
 {
-    (void)event;
     int next = command[0] == 'n';
 
-    if (isfullscreen == 0) {
-        XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-    }
+    XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+    remap(event);
 }
 
 void launch(XEvent *event, char *command)
@@ -241,6 +239,7 @@ void fullscreen(XEvent *event, char *command)
         gap_bottom   = 0;
         gap_left     = 0;
         isfullscreen = 1;
+        bardestroy();
     } else if (isfullscreen == 1) {
         border_width = BORDER_WIDTH;
         gap_top      = GAP_TOP;
@@ -248,6 +247,7 @@ void fullscreen(XEvent *event, char *command)
         gap_bottom   = GAP_BOTTOM;
         gap_left     = GAP_LEFT;
         isfullscreen = 0;
+        barlaunch();
     }
     remap(event);
 }
