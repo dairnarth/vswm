@@ -176,11 +176,11 @@ void map(XEvent *event)
 
 void focus(XEvent *event, char *command)
 {
+    (void)event;
     int next = command[0] == 'n';
 
     if (isfullscreen == 0) {
         XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-        remap(event);
     }
 }
 
