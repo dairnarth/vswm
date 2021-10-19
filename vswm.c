@@ -1,15 +1,19 @@
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 /* Defaults */
+#define BARCLASS        "Bar"
+#define BARCOMMAND      "$HOME/.config/lemonbar/lemonlaunch"
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
-#define GAP_TOP         28
+#define GAP_TOP         30
 #define GAP_RIGHT       5
 #define GAP_BOTTOM      5
 #define GAP_LEFT        5
@@ -42,6 +46,10 @@ static void refresh(XEvent *event, char *command);
 static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
+static int  barcheck(Window window);
+static void barconfig(XEvent *event);
+static void barlaunch(void);
+static void bardestroy(void);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -56,6 +64,7 @@ static int gap_bottom = GAP_BOTTOM;
 static int gap_left   = GAP_LEFT;
 static Display *display;
 static Window root;
+static Window barwin;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
@@ -107,8 +116,8 @@ void scan(void)
 
     if (XQueryTree(display, root, &r, &p, &c, &n)) {
         for (i = 0; i < n; i++)
-            XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
-
+            if (c[i] != barwin)
+                XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
         if (c)
             XFree(c);
     }
@@ -165,13 +174,14 @@ void map(XEvent *event)
     XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
     XConfigureWindow(display, window, CWBorderWidth, &changes);
-    XMoveResizeWindow(display, window, gap_left, gap_top, width, height);
+    barcheck(window) ?
+        XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
+        barconfig(event);
     XMapWindow(display, window);
 }
 
 void focus(XEvent *event, char *command)
 {
-    (void)event;
     int next = command[0] == 'n';
 
     XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
@@ -229,6 +239,7 @@ void fullscreen(XEvent *event, char *command)
         gap_bottom   = 0;
         gap_left     = 0;
         isfullscreen = 1;
+        bardestroy();
     } else if (isfullscreen == 1) {
         border_width = BORDER_WIDTH;
         gap_top      = GAP_TOP;
@@ -236,6 +247,7 @@ void fullscreen(XEvent *event, char *command)
         gap_bottom   = GAP_BOTTOM;
         gap_left     = GAP_LEFT;
         isfullscreen = 0;
+        barlaunch();
     }
     remap(event);
 }
@@ -248,6 +260,46 @@ void remap(XEvent *event)
     XGetInputFocus(display, &request->window, &revert);
     refresh(NULL, NULL);
     map(event);
+}
+
+int barcheck(Window window)
+{
+    char *class;
+    XClassHint classhint = { NULL, NULL };
+
+    XGetClassHint(display, window, &classhint);
+    class = classhint.res_class;
+
+    if (strcmp(class, BARCLASS) == 0) {
+        return 0;
+    } else {
+        return 1;
+    }
+
+    if (classhint.res_class)
+        XFree(classhint.res_class);
+    if (classhint.res_name)
+        XFree(classhint.res_name);
+}
+
+void barconfig(XEvent *event)
+{
+    barwin = event->xmaprequest.window;
+
+    XMoveResizeWindow(display, barwin, 5, 5, 1268, 18);
+}
+
+void barlaunch(void)
+{
+    XEvent *event;
+
+    launch(event, BARCOMMAND);
+}
+
+void bardestroy(void)
+{
+    XSetCloseDownMode(display, DestroyAll);
+    XKillClient(display, barwin);
 }
 
 int ignore(Display *display, XErrorEvent *event)
@@ -275,5 +327,6 @@ int main(void)
     size();
     grab();
     scan();
+    barlaunch();
     loop();
 }
