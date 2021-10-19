@@ -10,9 +10,10 @@
 
 /* Defaults */
 #define BARCLASS        "Bar"
+#define BARCOMMAND      "$HOME/.config/lemonbar/lemonlaunch"
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
-#define GAP_TOP         28
+#define GAP_TOP         30
 #define GAP_RIGHT       5
 #define GAP_BOTTOM      5
 #define GAP_LEFT        5
@@ -46,6 +47,9 @@ static void quit(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
 static void remap(XEvent *event);
 static int  barcheck(Window window);
+static void barconfig(XEvent *event);
+static void barlaunch(void);
+static void bardestroy(void);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -60,6 +64,7 @@ static int gap_bottom = GAP_BOTTOM;
 static int gap_left   = GAP_LEFT;
 static Display *display;
 static Window root;
+static Window barwin;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
@@ -111,7 +116,8 @@ void scan(void)
 
     if (XQueryTree(display, root, &r, &p, &c, &n)) {
         for (i = 0; i < n; i++)
-            XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
+            if (c[i] != barwin)
+                XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
         if (c)
             XFree(c);
     }
@@ -168,9 +174,9 @@ void map(XEvent *event)
     XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
     XSetWindowBorder(display, window, BORDER_COLOUR);
     XConfigureWindow(display, window, CWBorderWidth, &changes);
-    (barcheck(window)) ?
+    barcheck(window) ?
         XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
-        XMoveResizeWindow(display, window, 5, 5, 1268, 18);
+        barconfig(event);
     XMapWindow(display, window);
 }
 
@@ -276,6 +282,26 @@ int barcheck(Window window)
         XFree(classhint.res_name);
 }
 
+void barconfig(XEvent *event)
+{
+    barwin = event->xmaprequest.window;
+
+    XMoveResizeWindow(display, barwin, 5, 5, 1268, 18);
+}
+
+void barlaunch(void)
+{
+    XEvent *event;
+
+    launch(event, BARCOMMAND);
+}
+
+void bardestroy(void)
+{
+    XSetCloseDownMode(display, DestroyAll);
+    XKillClient(display, barwin);
+}
+
 int ignore(Display *display, XErrorEvent *event)
 {
     (void)display;
@@ -301,5 +327,6 @@ int main(void)
     size();
     grab();
     scan();
+    barlaunch();
     loop();
 }
