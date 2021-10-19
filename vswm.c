@@ -7,6 +7,7 @@
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 
 /* Defaults */
 #define BARCLASS        "Bar"
@@ -50,6 +51,8 @@ static int  barcheck(Window window);
 static void barconfig(XEvent *event);
 static void barlaunch(void);
 static void bardestroy(void);
+static void updatetitle(Window window);
+static void setup(void);
 
 static int ignore(Display *display, XErrorEvent *event);
 
@@ -65,6 +68,7 @@ static int gap_left   = GAP_LEFT;
 static Display *display;
 static Window root;
 static Window barwin;
+static Atom netactivewindow, netsupported;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
@@ -178,6 +182,7 @@ void map(XEvent *event)
         XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
         barconfig(event);
     XMapWindow(display, window);
+    updatetitle(window);
 }
 
 void focus(XEvent *event, char *command)
@@ -302,6 +307,44 @@ void bardestroy(void)
     XKillClient(display, barwin);
 }
 
+void updatetitle(Window window)
+{
+    XEvent event;
+
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = netactivewindow;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = 1;
+    event.xclient.data.l[1] = CurrentTime;
+    event.xclient.data.l[2] = window;
+
+    XSendEvent(display, root, False, NoEventMask, &event);
+}
+
+void setup(void)
+{
+    signal(SIGCHLD, SIG_IGN);
+    XSetErrorHandler(ignore);
+
+    screen = XDefaultScreen(display);
+    root = XDefaultRootWindow(display);
+
+    XSelectInput(display, root, SubstructureRedirectMask);
+    XDefineCursor(display, root, XCreateFontCursor(display, 68));
+
+    netsupported    = XInternAtom(display, "_NET_Supported",     False);
+    netactivewindow = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
+
+    XChangeProperty(display, root, netsupported, XA_ATOM, 32, PropModeReplace,
+            (unsigned char *) &netactivewindow, 1);
+
+    size();
+    grab();
+    scan();
+    barlaunch();
+}
+
 int ignore(Display *display, XErrorEvent *event)
 {
     (void)display;
@@ -315,18 +358,6 @@ int main(void)
     if (!(display = XOpenDisplay(0)))
         exit(1);
 
-    signal(SIGCHLD, SIG_IGN);
-    XSetErrorHandler(ignore);
-
-    screen = XDefaultScreen(display);
-    root = XDefaultRootWindow(display);
-
-    XSelectInput(display, root, SubstructureRedirectMask);
-    XDefineCursor(display, root, XCreateFontCursor(display, 68));
-
-    size();
-    grab();
-    scan();
-    barlaunch();
+    setup();
     loop();
 }
