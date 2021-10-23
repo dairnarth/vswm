@@ -142,6 +142,8 @@ void enter(XEvent *event)
 
     XSetInputFocus(display, window, RevertToParent, CurrentTime);
     XRaiseWindow(display, window);
+    remap(event);
+    updatetitle(window);
 }
 
 void configure(XEvent *event)
@@ -182,7 +184,6 @@ void map(XEvent *event)
         XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
         barconfig(event);
     XMapWindow(display, window);
-    updatetitle(window);
 }
 
 void focus(XEvent *event, char *command)
@@ -190,7 +191,6 @@ void focus(XEvent *event, char *command)
     int next = command[0] == 'n';
 
     XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-    remap(event);
 }
 
 void launch(XEvent *event, char *command)
@@ -319,7 +319,10 @@ void updatetitle(Window window)
     event.xclient.data.l[1] = CurrentTime;
     event.xclient.data.l[2] = window;
 
-    XSendEvent(display, root, False, NoEventMask, &event);
+    XSendEvent(display, root, False,
+        (SubstructureNotifyMask|SubstructureRedirectMask), &event);
+    XChangeProperty(display, root, netactivewindow, XA_WINDOW, 32,
+        PropModeReplace, (unsigned char *) &window, 1);
 }
 
 void setup(void)
@@ -333,7 +336,7 @@ void setup(void)
     XSelectInput(display, root, SubstructureRedirectMask);
     XDefineCursor(display, root, XCreateFontCursor(display, 68));
 
-    netsupported    = XInternAtom(display, "_NET_Supported",     False);
+    netsupported    = XInternAtom(display, "_NET_SUPPORTED",     False);
     netactivewindow = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
 
     XChangeProperty(display, root, netsupported, XA_ATOM, 32, PropModeReplace,
