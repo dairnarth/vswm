@@ -34,6 +34,7 @@ static int  barcheck(Window window);
 static void barconfig(XEvent *event);
 static void bardestroy(void);
 static void barlaunch(void);
+static void bartoggle(XEvent *event, char *command);
 static void configure(XEvent *event);
 static void destroy(XEvent *event, char *command);
 static void enter(XEvent *event);
@@ -57,6 +58,7 @@ static void updatetitle(Window window);
 static int screen, width, height;
 static int running = 1;
 static int isfullscreen = 0;
+static int baron = 1;
 static int border_width = BORDER_WIDTH;
 static int gap_top    = GAP_TOP;
 static int gap_right  = GAP_RIGHT;
@@ -72,6 +74,7 @@ static Key keys[] = {
     {   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"        },
     {   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser"  }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
     {   Mod4Mask,             XK_space,                   launch,           "dmenu_run"                 },
+    {   Mod4Mask,             XK_b,                       bartoggle,        0                           },
     {   Mod4Mask,             XK_q,                       destroy,          0                           },
     {   Mod4Mask|ShiftMask,   XK_r,                       refresh,          0                           },
     {   Mod4Mask|ShiftMask,   XK_q,                       quit,             0                           },
@@ -124,6 +127,7 @@ void bardestroy(void)
 {
     XSetCloseDownMode(display, DestroyAll);
     XKillClient(display, barwin);
+    baron = 0;
 }
 
 void barlaunch(void)
@@ -131,6 +135,15 @@ void barlaunch(void)
     XEvent *event = { NULL };
 
     launch(event, BARCOMMAND);
+    baron = 1;
+}
+
+void bartoggle(XEvent *event, char *command)
+{
+    (void)event;
+    (void)command;
+
+    baron ? bardestroy() : barlaunch();
 }
 
 void configure(XEvent *event)
