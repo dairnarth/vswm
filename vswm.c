@@ -188,6 +188,7 @@ void map(XEvent *event)
 
 void focus(XEvent *event, char *command)
 {
+    (void)event;
     int next = command[0] == 'n';
 
     XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
@@ -296,7 +297,7 @@ void barconfig(XEvent *event)
 
 void barlaunch(void)
 {
-    XEvent *event;
+    XEvent *event = { NULL };
 
     launch(event, BARCOMMAND);
 }
