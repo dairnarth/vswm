@@ -30,31 +30,28 @@ struct Key {
 };
 
 /* Function Declarations */
-static void size(void);
-static void grab(void);
-static void scan(void);
-static void loop(void);
-
-static void enter(XEvent *event);
-static void configure(XEvent *event);
-static void key(XEvent *event);
-static void map(XEvent *event);
-
-static void focus(XEvent *event, char *command);
-static void launch(XEvent *event, char *command);
-static void destroy(XEvent *event, char *command);
-static void refresh(XEvent *event, char *command);
-static void quit(XEvent *event, char *command);
-static void fullscreen(XEvent *event, char *command);
-static void remap(XEvent *event);
 static int  barcheck(Window window);
 static void barconfig(XEvent *event);
-static void barlaunch(void);
 static void bardestroy(void);
-static void updatetitle(Window window);
+static void barlaunch(void);
+static void configure(XEvent *event);
+static void destroy(XEvent *event, char *command);
+static void enter(XEvent *event);
+static void focus(XEvent *event, char *command);
+static void fullscreen(XEvent *event, char *command);
+static void grab(void);
+static int  ignore(Display *display, XErrorEvent *event);
+static void key(XEvent *event);
+static void launch(XEvent *event, char *command);
+static void loop(void);
+static void map(XEvent *event);
+static void quit(XEvent *event, char *command);
+static void refresh(XEvent *event, char *command);
+static void remap(XEvent *event);
+static void scan(void);
 static void setup(void);
-
-static int ignore(Display *display, XErrorEvent *event);
+static void size(void);
+static void updatetitle(Window window);
 
 /* Variables */
 static int screen, width, height;
@@ -96,178 +93,6 @@ static const Events events[LASTEvent] = {
     [MapRequest] = map,
 };
 
-void size(void)
-{
-    width = XDisplayWidth(display, screen) - \
-            (gap_right + gap_left + (border_width * 2));
-    height = XDisplayHeight(display, screen) - \
-            (gap_top + gap_bottom + (border_width * 2));
-}
-
-void grab(void)
-{
-    unsigned int i;
-
-    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
-        XGrabKey(display, XKeysymToKeycode(display, keys[i].keysym),
-            keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
-}
-
-void scan(void)
-{
-    unsigned int i, n;
-    Window r, p, *c;
-
-    if (XQueryTree(display, root, &r, &p, &c, &n)) {
-        for (i = 0; i < n; i++)
-            if (c[i] != barwin)
-                XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
-        if (c)
-            XFree(c);
-    }
-}
-
-void loop(void)
-{
-    XEvent event;
-
-    while (running && !XNextEvent(display, &event))
-        if (events[event.type])
-            events[event.type](&event);
-}
-
-void enter(XEvent *event)
-{
-    Window window = event->xcrossing.window;
-
-    XSetInputFocus(display, window, RevertToParent, CurrentTime);
-    XRaiseWindow(display, window);
-    remap(event);
-    updatetitle(window);
-}
-
-void configure(XEvent *event)
-{
-    XConfigureRequestEvent *request = &event->xconfigurerequest;
-    XWindowChanges changes = {
-        .x = request->x,
-        .y = request->y,
-        .width = request->width,
-        .height = request->height,
-        .border_width = request->border_width,
-        .sibling = request->above,
-        .stack_mode = request->detail,
-    };
-
-    XConfigureWindow(display, request->window, request->value_mask, &changes);
-}
-
-void key(XEvent *event)
-{
-    unsigned int i;
-    KeySym keysym = XkbKeycodeToKeysym(display, event->xkey.keycode, 0, 0);
-
-    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
-        if (keysym == keys[i].keysym && keys[i].modifier == event->xkey.state)
-            keys[i].function(event, keys[i].command);
-}
-
-void map(XEvent *event)
-{
-    Window window = event->xmaprequest.window;
-    XWindowChanges changes = { .border_width = border_width };
-
-    XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
-    XSetWindowBorder(display, window, BORDER_COLOUR);
-    XConfigureWindow(display, window, CWBorderWidth, &changes);
-    barcheck(window) ?
-        XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
-        barconfig(event);
-    XMapWindow(display, window);
-}
-
-void focus(XEvent *event, char *command)
-{
-    (void)event;
-    int next = command[0] == 'n';
-
-    XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
-}
-
-void launch(XEvent *event, char *command)
-{
-    (void)event;
-
-    if (fork() == 0) {
-        if (display)
-            close(XConnectionNumber(display));
-
-        setsid();
-        execl("/bin/bash", "bash", "-c", command, 0);
-
-        exit(1);
-    }
-}
-
-void destroy(XEvent *event, char *command)
-{
-    (void)command;
-
-    XSetCloseDownMode(display, DestroyAll);
-    XKillClient(display, event->xkey.subwindow);
-}
-
-void refresh(XEvent *event, char *command)
-{
-    (void)event;
-    (void)command;
-
-    size();
-    scan();
-}
-
-void quit(XEvent *event, char *command)
-{
-    (void)event;
-    (void)command;
-
-    running = 0;
-}
-
-void fullscreen(XEvent *event, char *command)
-{
-    (void)command;
-
-    if (isfullscreen == 0) {
-        border_width = 0;
-        gap_top      = 0;
-        gap_right    = 0;
-        gap_bottom   = 0;
-        gap_left     = 0;
-        isfullscreen = 1;
-        bardestroy();
-    } else if (isfullscreen == 1) {
-        border_width = BORDER_WIDTH;
-        gap_top      = GAP_TOP;
-        gap_right    = GAP_RIGHT;
-        gap_bottom   = GAP_BOTTOM;
-        gap_left     = GAP_LEFT;
-        isfullscreen = 0;
-        barlaunch();
-    }
-    remap(event);
-}
-
-void remap(XEvent *event)
-{
-    XMapRequestEvent *request = &event->xmaprequest;
-    int revert;
-
-    XGetInputFocus(display, &request->window, &revert);
-    refresh(NULL, NULL);
-    map(event);
-}
-
 int barcheck(Window window)
 {
     char *class;
@@ -295,6 +120,12 @@ void barconfig(XEvent *event)
     XMoveResizeWindow(display, barwin, 5, 5, 1268, 18);
 }
 
+void bardestroy(void)
+{
+    XSetCloseDownMode(display, DestroyAll);
+    XKillClient(display, barwin);
+}
+
 void barlaunch(void)
 {
     XEvent *event = { NULL };
@@ -302,28 +133,176 @@ void barlaunch(void)
     launch(event, BARCOMMAND);
 }
 
-void bardestroy(void)
+void configure(XEvent *event)
 {
-    XSetCloseDownMode(display, DestroyAll);
-    XKillClient(display, barwin);
+    XConfigureRequestEvent *request = &event->xconfigurerequest;
+    XWindowChanges changes = {
+        .x = request->x,
+        .y = request->y,
+        .width = request->width,
+        .height = request->height,
+        .border_width = request->border_width,
+        .sibling = request->above,
+        .stack_mode = request->detail,
+    };
+
+    XConfigureWindow(display, request->window, request->value_mask, &changes);
 }
 
-void updatetitle(Window window)
+void destroy(XEvent *event, char *command)
+{
+    (void)command;
+
+    XSetCloseDownMode(display, DestroyAll);
+    XKillClient(display, event->xkey.subwindow);
+}
+
+void enter(XEvent *event)
+{
+    Window window = event->xcrossing.window;
+
+    XSetInputFocus(display, window, RevertToParent, CurrentTime);
+    XRaiseWindow(display, window);
+    remap(event);
+    updatetitle(window);
+}
+
+void focus(XEvent *event, char *command)
+{
+    (void)event;
+    int next = command[0] == 'n';
+
+    XCirculateSubwindows(display, root, next ? RaiseLowest : LowerHighest);
+}
+
+void fullscreen(XEvent *event, char *command)
+{
+    (void)command;
+
+    if (isfullscreen == 0) {
+        border_width = 0;
+        gap_top      = 0;
+        gap_right    = 0;
+        gap_bottom   = 0;
+        gap_left     = 0;
+        isfullscreen = 1;
+        bardestroy();
+    } else if (isfullscreen == 1) {
+        border_width = BORDER_WIDTH;
+        gap_top      = GAP_TOP;
+        gap_right    = GAP_RIGHT;
+        gap_bottom   = GAP_BOTTOM;
+        gap_left     = GAP_LEFT;
+        isfullscreen = 0;
+        barlaunch();
+    }
+    remap(event);
+}
+
+void grab(void)
+{
+    unsigned int i;
+
+    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
+        XGrabKey(display, XKeysymToKeycode(display, keys[i].keysym),
+            keys[i].modifier, root, True, GrabModeAsync, GrabModeAsync);
+}
+
+int ignore(Display *display, XErrorEvent *event)
+{
+    (void)display;
+    (void)event;
+
+    return 0;
+}
+
+void key(XEvent *event)
+{
+    unsigned int i;
+    KeySym keysym = XkbKeycodeToKeysym(display, event->xkey.keycode, 0, 0);
+
+    for (i = 0; i < sizeof(keys) / sizeof(struct Key); i++)
+        if (keysym == keys[i].keysym && keys[i].modifier == event->xkey.state)
+            keys[i].function(event, keys[i].command);
+}
+
+void launch(XEvent *event, char *command)
+{
+    (void)event;
+
+    if (fork() == 0) {
+        if (display)
+            close(XConnectionNumber(display));
+
+        setsid();
+        execl("/bin/bash", "bash", "-c", command, 0);
+
+        exit(1);
+    }
+}
+
+void loop(void)
 {
     XEvent event;
 
-    event.type = ClientMessage;
-    event.xclient.window = window;
-    event.xclient.message_type = netactivewindow;
-    event.xclient.format = 32;
-    event.xclient.data.l[0] = 1;
-    event.xclient.data.l[1] = CurrentTime;
-    event.xclient.data.l[2] = window;
+    while (running && !XNextEvent(display, &event))
+        if (events[event.type])
+            events[event.type](&event);
+}
 
-    XSendEvent(display, root, False,
-        (SubstructureNotifyMask|SubstructureRedirectMask), &event);
-    XChangeProperty(display, root, netactivewindow, XA_WINDOW, 32,
-        PropModeReplace, (unsigned char *) &window, 1);
+void map(XEvent *event)
+{
+    Window window = event->xmaprequest.window;
+    XWindowChanges changes = { .border_width = border_width };
+
+    XSelectInput(display, window, StructureNotifyMask | EnterWindowMask);
+    XSetWindowBorder(display, window, BORDER_COLOUR);
+    XConfigureWindow(display, window, CWBorderWidth, &changes);
+    barcheck(window) ?
+        XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
+        barconfig(event);
+    XMapWindow(display, window);
+}
+
+void quit(XEvent *event, char *command)
+{
+    (void)event;
+    (void)command;
+
+    running = 0;
+}
+
+void refresh(XEvent *event, char *command)
+{
+    (void)event;
+    (void)command;
+
+    size();
+    scan();
+}
+
+void remap(XEvent *event)
+{
+    XMapRequestEvent *request = &event->xmaprequest;
+    int revert;
+
+    XGetInputFocus(display, &request->window, &revert);
+    refresh(NULL, NULL);
+    map(event);
+}
+
+void scan(void)
+{
+    unsigned int i, n;
+    Window r, p, *c;
+
+    if (XQueryTree(display, root, &r, &p, &c, &n)) {
+        for (i = 0; i < n; i++)
+            if (c[i] != barwin)
+                XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
+        if (c)
+            XFree(c);
+    }
 }
 
 void setup(void)
@@ -349,12 +328,30 @@ void setup(void)
     barlaunch();
 }
 
-int ignore(Display *display, XErrorEvent *event)
+void size(void)
 {
-    (void)display;
-    (void)event;
+    width = XDisplayWidth(display, screen) - \
+            (gap_right + gap_left + (border_width * 2));
+    height = XDisplayHeight(display, screen) - \
+            (gap_top + gap_bottom + (border_width * 2));
+}
 
-    return 0;
+void updatetitle(Window window)
+{
+    XEvent event;
+
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = netactivewindow;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = 1;
+    event.xclient.data.l[1] = CurrentTime;
+    event.xclient.data.l[2] = window;
+
+    XSendEvent(display, root, False,
+        (SubstructureNotifyMask|SubstructureRedirectMask), &event);
+    XChangeProperty(display, root, netactivewindow, XA_WINDOW, 32,
+        PropModeReplace, (unsigned char *) &window, 1);
 }
 
 int main(void)
