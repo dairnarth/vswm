@@ -12,12 +12,11 @@
 /* Defaults */
 #define BARCLASS        "Bar"
 #define BARCOMMAND      "$HOME/.config/lemonbar/lemonlaunch"
+#define BARWIDTH        1268
+#define BARHEIGHT       18
 #define BORDER_WIDTH    1
 #define BORDER_COLOUR   0xebdbb2
-#define GAP_TOP         30
-#define GAP_RIGHT       5
-#define GAP_BOTTOM      5
-#define GAP_LEFT        5
+#define GAP             5
 
 typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
@@ -40,6 +39,7 @@ static void destroy(XEvent *event, char *command);
 static void enter(XEvent *event);
 static void focus(XEvent *event, char *command);
 static void fullscreen(XEvent *event, char *command);
+static void gapcalc(void);
 static void grab(void);
 static int  ignore(Display *display, XErrorEvent *event);
 static void key(XEvent *event);
@@ -58,12 +58,10 @@ static void updatetitle(Window window);
 static int screen, width, height;
 static int running = 1;
 static int isfullscreen = 0;
-static int baron = 1;
+static int baron  = 1;
+static int bartop = 1;
 static int border_width = BORDER_WIDTH;
-static int gap_top    = GAP_TOP;
-static int gap_right  = GAP_RIGHT;
-static int gap_bottom = GAP_BOTTOM;
-static int gap_left   = GAP_LEFT;
+static int gap_top, gap_bottom, gap = GAP;
 static Display *display;
 static Window root;
 static Window barwin;
@@ -120,7 +118,7 @@ void barconfig(XEvent *event)
 {
     barwin = event->xmaprequest.window;
 
-    XMoveResizeWindow(display, barwin, 5, 5, 1268, 18);
+    XMoveResizeWindow(display, barwin, 5, 5, BARWIDTH, BARHEIGHT);
 }
 
 void bardestroy(void)
@@ -140,10 +138,10 @@ void barlaunch(void)
 
 void bartoggle(XEvent *event, char *command)
 {
-    (void)event;
     (void)command;
 
     baron ? bardestroy() : barlaunch();
+    remap(event);
 }
 
 void configure(XEvent *event)
@@ -193,23 +191,40 @@ void fullscreen(XEvent *event, char *command)
     (void)command;
 
     if (isfullscreen == 0) {
-        border_width = 0;
-        gap_top      = 0;
-        gap_right    = 0;
-        gap_bottom   = 0;
-        gap_left     = 0;
         isfullscreen = 1;
+        border_width = 0;
+        gap          = 0;
+        gap_top      = 0;
+        gap_bottom   = 0;
         bardestroy();
     } else if (isfullscreen == 1) {
         border_width = BORDER_WIDTH;
-        gap_top      = GAP_TOP;
-        gap_right    = GAP_RIGHT;
-        gap_bottom   = GAP_BOTTOM;
-        gap_left     = GAP_LEFT;
         isfullscreen = 0;
+        gapcalc();
         barlaunch();
     }
     remap(event);
+}
+
+void gapcalc(void)
+{
+    if (isfullscreen == 0) {
+        if (bartop == 1) {
+            if (baron) {
+                gap_top = (GAP * 2) + (BORDER_WIDTH * 2 ) + BARHEIGHT;
+            } else {
+                gap_top = GAP;
+            }
+            gap_bottom  = GAP;
+        } else {
+            if (baron) {
+                gap_bottom = (GAP * 2) + (BORDER_WIDTH * 2 ) + BARHEIGHT;
+            } else {
+                gap_bottom = GAP;
+            }
+            gap_top    = GAP;
+        }
+    }
 }
 
 void grab(void)
@@ -272,7 +287,7 @@ void map(XEvent *event)
     XSetWindowBorder(display, window, BORDER_COLOUR);
     XConfigureWindow(display, window, CWBorderWidth, &changes);
     barcheck(window) ?
-        XMoveResizeWindow(display, window, gap_left, gap_top, width, height) :
+        XMoveResizeWindow(display, window, gap, gap_top, width, height) :
         barconfig(event);
     XMapWindow(display, window);
 }
@@ -312,7 +327,7 @@ void scan(void)
     if (XQueryTree(display, root, &r, &p, &c, &n)) {
         for (i = 0; i < n; i++)
             if (c[i] != barwin)
-                XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
+                XMoveResizeWindow(display, c[i], gap, gap_top, width, height);
         if (c)
             XFree(c);
     }
@@ -343,8 +358,9 @@ void setup(void)
 
 void size(void)
 {
+    gapcalc();
     width = XDisplayWidth(display, screen) - \
-            (gap_right + gap_left + (border_width * 2));
+            ((gap * 2) + (border_width * 2));
     height = XDisplayHeight(display, screen) - \
             (gap_top + gap_bottom + (border_width * 2));
 }
