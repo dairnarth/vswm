@@ -19,6 +19,7 @@
 #define GAP_BOTTOM      5
 #define GAP_LEFT        5
 
+/* Structs */
 typedef struct Key Key;
 typedef void (*Events)(XEvent *event);
 
@@ -93,6 +94,7 @@ static const Events events[LASTEvent] = {
     [MapRequest] = map,
 };
 
+/* Function Implementations */
 int barcheck(Window window)
 {
     char *class;
