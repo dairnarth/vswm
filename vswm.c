@@ -44,6 +44,7 @@ static void grab(void);
 static int  ignore(Display *display, XErrorEvent *event);
 static void key(XEvent *event);
 static void launch(XEvent *event, char *command);
+static void leave(XEvent *event);
 static void loop(void);
 static void map(XEvent *event);
 static void quit(XEvent *event, char *command);
@@ -89,9 +90,10 @@ static Key keys[] = {
 
 static const Events events[LASTEvent] = {
     [ConfigureRequest] = configure,
-    [EnterNotify] = enter,
-    [KeyPress] = key,
-    [MapRequest] = map,
+    [EnterNotify]      = enter,
+    [KeyPress]         = key,
+    [LeaveNotify]      = leave,
+    [MapRequest]       = map,
 };
 
 /* Function Implementations */
@@ -250,6 +252,13 @@ void loop(void)
     while (running && !XNextEvent(display, &event))
         if (events[event.type])
             events[event.type](&event);
+}
+
+void leave(XEvent *event)
+{
+    (void)event;
+
+    XDeleteProperty(display, root, netactivewindow);
 }
 
 void map(XEvent *event)
