@@ -64,6 +64,7 @@ static int gap_top    = GAP_TOP;
 static int gap_right  = GAP_RIGHT;
 static int gap_bottom = GAP_BOTTOM;
 static int gap_left   = GAP_LEFT;
+static int tag = 1;
 static Display *display;
 static Window root;
 static Window barwin;
@@ -157,7 +158,8 @@ void changetag(XEvent *event, char *command)
 {
     (void)event;
     (void)command;
-    int tag = 4;
+
+    tag += 1;
 
     XChangeProperty(display, root, netactivetag, XA_INTEGER, 32, PropModeReplace, (unsigned char *)&tag, 1);
 }
