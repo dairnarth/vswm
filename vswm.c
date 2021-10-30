@@ -57,6 +57,7 @@ static void updatetitle(Window window);
 /* Variables */
 static int screen, width, height;
 static int running = 1;
+static unsigned int nowins;
 static int isfullscreen = 0;
 static int border_width = BORDER_WIDTH;
 static int gap_top    = GAP_TOP;
@@ -157,6 +158,7 @@ void destroy(XEvent *event, char *command)
 
     XSetCloseDownMode(display, DestroyAll);
     XKillClient(display, event->xkey.subwindow);
+    nowins = 0;
 }
 
 void enter(XEvent *event)
@@ -181,24 +183,26 @@ void fullscreen(XEvent *event, char *command)
 {
     (void)command;
 
-    if (isfullscreen == 0) {
-        border_width = 0;
-        gap_top      = 0;
-        gap_right    = 0;
-        gap_bottom   = 0;
-        gap_left     = 0;
-        isfullscreen = 1;
-        bardestroy();
-    } else if (isfullscreen == 1) {
-        border_width = BORDER_WIDTH;
-        gap_top      = GAP_TOP;
-        gap_right    = GAP_RIGHT;
-        gap_bottom   = GAP_BOTTOM;
-        gap_left     = GAP_LEFT;
-        isfullscreen = 0;
-        barlaunch();
+    if (nowins > 1) {
+        if (isfullscreen == 0) {
+            border_width = 0;
+            gap_top      = 0;
+            gap_right    = 0;
+            gap_bottom   = 0;
+            gap_left     = 0;
+            isfullscreen = 1;
+            bardestroy();
+        } else if (isfullscreen == 1) {
+            border_width = BORDER_WIDTH;
+            gap_top      = GAP_TOP;
+            gap_right    = GAP_RIGHT;
+            gap_bottom   = GAP_BOTTOM;
+            gap_left     = GAP_LEFT;
+            isfullscreen = 0;
+            barlaunch();
+        }
+        remap(event);
     }
-    remap(event);
 }
 
 void grab(void)
@@ -295,11 +299,10 @@ void remap(XEvent *event)
 
 void scan(void)
 {
-    unsigned int i, n;
     Window r, p, *c;
 
-    if (XQueryTree(display, root, &r, &p, &c, &n)) {
-        for (i = 0; i < n; i++)
+    if (XQueryTree(display, root, &r, &p, &c, &nowins)) {
+        for (unsigned int i = 0; i < nowins; i++)
             if (c[i] != barwin)
                 XMoveResizeWindow(display, c[i], gap_left, gap_top, width, height);
         if (c)
