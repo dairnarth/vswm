@@ -70,21 +70,21 @@ static Atom netactivewindow, netsupported;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
-    {   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"        },
-    {   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser"  }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
-    {   Mod4Mask,             XK_space,                   launch,           "dmenu_run"                 },
-    {   Mod4Mask,             XK_q,                       destroy,          0                           },
-    {   Mod4Mask|ShiftMask,   XK_r,                       refresh,          0                           },
-    {   Mod4Mask|ShiftMask,   XK_q,                       quit,             0                           },
-    {   Mod4Mask|ShiftMask,   XK_x,                       launch,           "safe_shutdown"             },
-    {   Mod4Mask,             XK_Tab,                     focus,            "next"                      },
-    {   Mod4Mask|ShiftMask,   XK_Tab,                     focus,            "prev"                      },
-    {   Mod4Mask,             XK_Return,                  fullscreen,       0                           },
-    {   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                },
-    {   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"              },
-    {   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"              },
-    {   0,                    XF86XK_MonBrightnessDown,   launch,           "light -U 5"                },
-    {   0,                    XF86XK_MonBrightnessUp,     launch,           "light -A 5"                },
+    {   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"                    },
+    {   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser"              }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
+    {   Mod4Mask,             XK_space,                   launch,           "dmenu_run -x 6 -y 6 -z 1110 -p 'RUN '" },
+    {   Mod4Mask,             XK_q,                       destroy,          0                                       },
+    {   Mod4Mask|ShiftMask,   XK_r,                       refresh,          0                                       },
+    {   Mod4Mask|ShiftMask,   XK_q,                       quit,             0                                       },
+    {   Mod4Mask|ShiftMask,   XK_x,                       launch,           "safe_shutdown"                         },
+    {   Mod4Mask,             XK_Tab,                     focus,            "next"                                  },
+    {   Mod4Mask|ShiftMask,   XK_Tab,                     focus,            "prev"                                  },
+    {   Mod4Mask,             XK_Return,                  fullscreen,       0                                       },
+    {   0,                    XF86XK_AudioMute,           launch,           "pamixer -t"                            },
+    {   0,                    XF86XK_AudioLowerVolume,    launch,           "pamixer -d 5"                          },
+    {   0,                    XF86XK_AudioRaiseVolume,    launch,           "pamixer -i 5"                          },
+    {   0,                    XF86XK_MonBrightnessDown,   launch,           "light -U 5"                            },
+    {   0,                    XF86XK_MonBrightnessUp,     launch,           "light -A 5"                            },
 };
 
 static const Events events[LASTEvent] = {
