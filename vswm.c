@@ -36,6 +36,7 @@ static void barconfig(XEvent *event);
 static void bardestroy(void);
 static void barlaunch(void);
 static void configure(XEvent *event);
+static void changetag(XEvent *event, char *command);
 static void destroy(XEvent *event, char *command);
 static void enter(XEvent *event);
 static void focus(XEvent *event, char *command);
@@ -66,13 +67,14 @@ static int gap_left   = GAP_LEFT;
 static Display *display;
 static Window root;
 static Window barwin;
-static Atom netactivewindow, netsupported;
+static Atom netactivewindow, netsupported, netactivetag;
 
 static Key keys[] = {
     /*  Modifiers,            Key,                        Function,         Arguments                   */
     {   Mod4Mask,             XK_t,                       launch,           "st -e tmux-default"       },
     {   Mod4Mask,             XK_w,                       launch,           "st -e setsid qutebrowser" }, /* TODO: Fix actual problem (ERROR 10: No Child Processes) */
     {   Mod4Mask,             XK_space,                   launch,           "dmenu_run -p 'RUN '"      },
+    {   Mod4Mask,             XK_p,                       changetag,        0                          },
     {   Mod4Mask,             XK_q,                       destroy,          0                          },
     {   Mod4Mask|ShiftMask,   XK_r,                       refresh,          0                          },
     {   Mod4Mask|ShiftMask,   XK_q,                       quit,             0                          },
@@ -149,6 +151,15 @@ void configure(XEvent *event)
     };
 
     XConfigureWindow(display, request->window, request->value_mask, &changes);
+}
+
+void changetag(XEvent *event, char *command)
+{
+    (void)event;
+    (void)command;
+    int tag = 4;
+
+    XChangeProperty(display, root, netactivetag, XA_INTEGER, 32, PropModeReplace, (unsigned char *)&tag, 1);
 }
 
 void destroy(XEvent *event, char *command)
@@ -320,6 +331,7 @@ void setup(void)
 
     netsupported    = XInternAtom(display, "_NET_SUPPORTED",     False);
     netactivewindow = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
+    netactivetag    = XInternAtom(display, "_NET_ACTIVE_TAG",    False);
 
     XChangeProperty(display, root, netsupported, XA_ATOM, 32, PropModeReplace,
             (unsigned char *) &netactivewindow, 1);
